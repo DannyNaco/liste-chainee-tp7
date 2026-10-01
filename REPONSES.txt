@@ -1,0 +1,69 @@
+TP - Sortir du fichier unique : réponses
+========================================
+
+Environnement : macOS (puce Apple), gcc = Apple clang 17.0.0.
+Les messages d'erreur sont ceux de clang ; ceux du vrai GCC sous Linux
+sont formulés différemment.
+
+
+EXERCICE 0
+----------
+
+Pourquoi ne versionne-t-on jamais les .o ni l'exécutable ?
+
+Ce sont des fichiers produits, pas des sources : on les régénère à
+l'identique avec une commande à partir des .c et .h. Les versionner
+n'apporte rien et pose trois problèmes :
+
+- ils sont binaires, donc git ne peut ni en montrer les différences ni
+  les fusionner, et chaque recompilation grossit l'historique ;
+- ils dépendent de la machine (un .o compilé sur un Mac ARM ne sert à
+  rien sous Linux ou Windows) ;
+- ils peuvent être en retard sur les sources, et un exécutable périmé
+  dans le dépôt trompe celui qui le récupère.
+
+
+EXERCICE 1
+----------
+
+Question A.
+main.c manipule des Maillon : il déclare "Maillon *liste" et passe ce
+pointeur aux fonctions. Le compilateur traite chaque .c isolément, il ne
+va jamais lire liste.c quand il compile main.c. Le type doit donc se
+trouver dans un fichier que main.c peut inclure, c'est-à-dire le .h. Les
+prototypes eux-mêmes en ont besoin, puisqu'ils mentionnent Maillon dans
+leurs paramètres.
+
+Question B.
+Pour deux raisons. D'abord liste.c a lui aussi besoin du type Maillon
+pour écrire les fonctions. Ensuite le compilateur voit ainsi côte à côte
+la déclaration (dans le .h) et la définition (dans le .c) : si elles ne
+correspondent pas, il le signale. Sans cette inclusion, le .h pourrait
+promettre une signature que le .c ne tient pas, et personne ne s'en
+apercevrait à la compilation.
+
+
+EXERCICE 2
+----------
+
+Sortie du programme :
+
+    liste     : 50 -> 40 -> 30 -> 20 -> 10 -> NULL
+    longueur  : 5
+    contient 30 : oui
+    liberee
+
+Question A.
+Deux fichiers : main.o et liste.o. Il n'y a pas de liste.h.o. Un .h
+n'est jamais compilé seul : #include recopie son texte dans chaque .c
+qui l'inclut, avant la compilation. De plus liste.h ne contient que des
+déclarations (un type, des prototypes), donc rien qui produise du code
+machine.
+
+Question B.
+Elle recompile tous les .c à chaque fois, même ceux qui n'ont pas
+changé, et ne garde aucun .o. Avec les deux étapes, si seul main.c
+change, on ne recompile que main.c et on réutilise liste.o. Sur deux
+fichiers la différence est invisible ; sur un projet de plusieurs
+centaines de fichiers, c'est la différence entre une seconde et
+plusieurs minutes. C'est aussi ce découpage qui rend make possible.
