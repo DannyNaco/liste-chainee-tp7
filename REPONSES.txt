@@ -67,3 +67,50 @@ change, on ne recompile que main.c et on réutilise liste.o. Sur deux
 fichiers la différence est invisible ; sur un projet de plusieurs
 centaines de fichiers, c'est la différence entre une seconde et
 plusieurs minutes. C'est aussi ce découpage qui rend make possible.
+
+
+EXERCICE 3
+----------
+
+Cas 1
+  Premier message exact :
+    Undefined symbols for architecture arm64:
+      "_liste_afficher", referenced from:
+          _main in main.o
+    (suivi de : ld: symbol(s) not found for architecture arm64)
+  Compilation ou lien : lien
+
+Cas 2
+  Premier message exact :
+    main.c:5:5: error: use of undeclared identifier 'Maillon'
+  Compilation ou lien : compilation
+
+Cas 3
+  Premier message exact :
+    ./liste.h:4:16: error: redefinition of 'Maillon'
+  Compilation ou lien : compilation
+
+Sous Linux avec le vrai GCC, les mêmes erreurs s'écrivent :
+  cas 1 : undefined reference to 'liste_inserer'
+  cas 2 : error: unknown type name 'Maillon'
+  cas 3 : error: redefinition of 'struct Maillon'
+
+Question 1.
+Le cas 1. Trois indices : le message est signé ld (l'éditeur de liens)
+et se termine par "linker command failed" ; il cite un fichier objet
+(main.o) et non un fichier source ; il ne donne aucun numéro de ligne,
+alors que le compilateur écrit toujours fichier.c:ligne:colonne. La
+compilation de main.c avait d'ailleurs réussi juste avant.
+
+Question 2.
+Le premier : use of undeclared identifier 'Maillon'. Les douze autres en
+découlent : liste est inconnu parce que sa déclaration a échoué, et les
+fonctions liste_* sont inconnues pour la même raison que Maillon. On
+corrige la première erreur, on recompile, et les autres disparaissent.
+
+Question 3.
+Dès qu'un en-tête en inclut un autre. Exemple : un module pile.h qui
+contient #include "liste.h" parce qu'il se sert de Maillon. Un main.c
+qui inclut liste.h et pile.h reçoit alors liste.h deux fois, sans que
+personne ait écrit deux fois la même ligne. Cela arrive dès qu'un projet
+a plusieurs modules qui partagent un type.
